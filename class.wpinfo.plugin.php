@@ -3,12 +3,12 @@
 $PluginInfo['WPInfo'] = array(
    'Name' => 'WordPress Info',
    'Description' => 'Force users to add additional information to discussions',
-   'Version' => '0.1',
+   'Version' => '0.2',
    'RequiredApplications' => array('Vanilla' => '>=2.1b2'),
    'RequiredPlugins' => array('Tagging' => '1.6.2'),
    'SettingsUrl' => '/settings/wpinfo',
    'SettingsPermission' => 'Garden.Settings.Manage',
-   'RegisterPermissions' => array('Plugins.WPInfo.Add', 'Plugins.WPInfo.Manage'),
+   'RegisterPermissions' => array('Plugins.WPInfo.Manage'),
    'HasLocale' => FALSE,
    'Author' => 'Robin Jurinka',
    'License' => 'MIT',
@@ -41,14 +41,11 @@ class WPInfoPlugin extends Gdn_Plugin {
          SaveToConfig('Plugins.WPInfo.KeepTags', TRUE);
       }
    }
-   
+
    /**
     *  Adds input fields to new discussion form
     */ 
    public function PostController_BeforeBodyInput_Handler($Sender) {
-      if(!CheckPermission('Plugins.WPInfo.Add')) {
-         return;
-      }
       $Sender->AddCssFile('wpinfo.css', 'plugins/WPInfo');
       $Sender->AddJsFile('wpinfo.js', 'plugins/WPInfo');
       $Sender->AddDefinition('WPInfoCategoryIDs', json_encode(C('Plugins.WPInfo.CategoryIDs')));
@@ -58,7 +55,7 @@ class WPInfoPlugin extends Gdn_Plugin {
 
       $HtmlOut = <<< EOT
 <div class="P">
-   <ul id="WPInfo" class="Hidden Tabs">
+   <ul id="WPInfo" class="Tabs">
       <li id="WPVersion">
          {$Sender->Form->Label(T('WordPress Version'), 'WPInfoWPVersion')}
          {$Sender->Form->DropDown(
@@ -91,13 +88,12 @@ EOT;
       $Session = Gdn::Session();
       $CategoryID = $Sender->EventArguments['FormPostValues']['CategoryID'];
 
-      // exit if current category is excluded or user has no right to add
-      if (in_array($CategoryID, C('Plugins.WPInfo.CategoryIDs')) || !$Session->CheckPermission('Plugins.WPInfo.Add')) {
+      // exit if current category is excluded
+      if (in_array($CategoryID, C('Plugins.WPInfo.CategoryIDs'))) {
          return;
       }
 
       // Add Validations for all roles without Plugins.WPInfo.Manage
-      $Sender->Validation->UnapplyRule('WPInfoThemeVersion');
       if(!$Session->CheckPermission('Plugins.WPInfo.Manage')) {    
          $Sender->Validation->ApplyRule('WPInfoWPVersion', 'Required', T('Please specify WordPress version number.'));
          $Sender->Validation->SetSchemaProperty('WPInfoWPVersion', 'Enum', $this->_WPVersions);
