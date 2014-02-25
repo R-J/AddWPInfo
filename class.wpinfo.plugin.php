@@ -30,9 +30,9 @@ class WPInfoPlugin extends Gdn_Plugin {
    public function Setup() {
       $Structure =  Gdn::Structure();
       $Structure->Table('Discussion')
-         ->Column('WPInfoWPVersion', 'varchar(255)', '')
-         ->Column('WPInfoThemeVersion', 'varchar(255)', '')
-         ->Column('WPInfoThemeName', 'varchar(255)', '')
+         ->Column('WPInfoWPVersion', 'varchar(255)', TRUE)
+         ->Column('WPInfoThemeVersion', 'varchar(255)', TRUE)
+         ->Column('WPInfoThemeName', 'varchar(255)', TRUE)
          ->Set(FALSE, FALSE);
       if (!C('Plugins.WPInfo.Themes')) {
          SaveToConfig('Plugins.WPInfo.Themes', array('Thesis', 'Genesis'));
