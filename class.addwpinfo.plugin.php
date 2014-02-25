@@ -1,21 +1,21 @@
 <?php if (!defined('APPLICATION')) exit();
 
-$PluginInfo['WPInfo'] = array(
-   'Name' => 'WordPress Info',
+$PluginInfo['AddWPInfo'] = array(
+   'Name' => 'Add WordPress Info',
    'Description' => 'Force users to add additional information to discussions',
-   'Version' => '0.2',
+   'Version' => '0.3',
    'RequiredApplications' => array('Vanilla' => '>=2.1b2'),
    'RequiredPlugins' => array('Tagging' => '1.6.2'),
-   'SettingsUrl' => '/settings/wpinfo',
+   'SettingsUrl' => '/settings/addwpinfo',
    'SettingsPermission' => 'Garden.Settings.Manage',
-   'RegisterPermissions' => array('Plugins.WPInfo.Manage'),
+   'RegisterPermissions' => array('Plugins.AddWPInfo.Manage'),
    'HasLocale' => FALSE,
    'Author' => 'Robin Jurinka',
    'License' => 'MIT',
    'MobileFriendly' => TRUE
 );
 
-class WPInfoPlugin extends Gdn_Plugin {
+class AddWPInfoPlugin extends Gdn_Plugin {
    protected $_WPVersions;
    protected $_WPVersionsDropDown;
    
@@ -34,11 +34,11 @@ class WPInfoPlugin extends Gdn_Plugin {
          ->Column('WPInfoThemeVersion', 'varchar(255)', TRUE)
          ->Column('WPInfoThemeName', 'varchar(255)', TRUE)
          ->Set(FALSE, FALSE);
-      if (!C('Plugins.WPInfo.Themes')) {
-         SaveToConfig('Plugins.WPInfo.Themes', array('Thesis', 'Genesis'));
+      if (!C('Plugins.AddWPInfo.Themes')) {
+         SaveToConfig('Plugins.AddWPInfo.Themes', array('Thesis', 'Genesis'));
       }
-      if (C('Plugins.WPInfo.KeepTags') == '') {
-         SaveToConfig('Plugins.WPInfo.KeepTags', TRUE);
+      if (C('Plugins.AddWPInfo.KeepTags') == '') {
+         SaveToConfig('Plugins.AddWPInfo.KeepTags', FALSE);
       }
    }
 
@@ -46,16 +46,16 @@ class WPInfoPlugin extends Gdn_Plugin {
     *  Adds input fields to new discussion form
     */ 
    public function PostController_BeforeBodyInput_Handler($Sender) {
-      $Sender->AddCssFile('wpinfo.css', 'plugins/WPInfo');
-      $Sender->AddJsFile('wpinfo.js', 'plugins/WPInfo');
-      $Sender->AddDefinition('WPInfoCategoryIDs', json_encode(C('Plugins.WPInfo.CategoryIDs')));
+      $Sender->AddCssFile('addwpinfo.css', 'plugins/AddWPInfo');
+      $Sender->AddJsFile('addwpinfo.js', 'plugins/AddWPInfo');
+      $Sender->AddDefinition('AddWPInfoCategoryIDs', json_encode(C('Plugins.AddWPInfo.CategoryIDs')));
 
-      $WPThemes = C('Plugins.WPInfo.Themes', array('Thesis', 'Genesis'));
+      $WPThemes = C('Plugins.AddWPInfo.Themes', array('Thesis', 'Genesis'));
       $WPThemes = array_combine($WPThemes, $WPThemes);
 
       $HtmlOut = <<< EOT
 <div class="P">
-   <ul id="WPInfo" class="Tabs">
+   <ul id="AddWPInfo" class="Tabs">
       <li id="WPVersion">
          {$Sender->Form->Label(T('WordPress Version'), 'WPInfoWPVersion')}
          {$Sender->Form->DropDown(
@@ -89,12 +89,12 @@ EOT;
       $CategoryID = $Sender->EventArguments['FormPostValues']['CategoryID'];
 
       // exit if current category is excluded
-      if (in_array($CategoryID, C('Plugins.WPInfo.CategoryIDs'))) {
+      if (in_array($CategoryID, C('Plugins.AddWPInfo.CategoryIDs'))) {
          return;
       }
 
-      // Add Validations for all roles without Plugins.WPInfo.Manage
-      if(!$Session->CheckPermission('Plugins.WPInfo.Manage')) {    
+      // Add Validations for all roles without Plugins.AddWPInfo.Manage
+      if(!$Session->CheckPermission('Plugins.AddWPInfo.Manage')) {    
          $Sender->Validation->ApplyRule('WPInfoWPVersion', 'Required', T('Please specify WordPress version number.'));
          $Sender->Validation->SetSchemaProperty('WPInfoWPVersion', 'Enum', $this->_WPVersions);
          $Sender->Validation->ApplyRule('WPInfoWPVersion', 'Enum', T('Choose one of the WordPress versions below.'));
@@ -104,7 +104,7 @@ EOT;
          $Sender->Validation->ApplyRule('WPInfoThemeVersion', 'RegexThemeVersion', T('Theme version must be "X.Y.Z".'));
          
          $Sender->Validation->ApplyRule('WPInfoThemeName', 'Required', T('Please specify theme name.'));
-         $Sender->Validation->SetSchemaProperty('WPInfoThemeName', 'Enum', C('Plugins.WPInfo.Themes', array('Thesis', 'Genesis')));
+         $Sender->Validation->SetSchemaProperty('WPInfoThemeName', 'Enum', C('Plugins.AddWPInfo.Themes', array('Thesis', 'Genesis')));
          $Sender->Validation->ApplyRule('WPInfoThemeName', 'Enum', T('Please choose a theme name.'));
       } 
       
@@ -116,7 +116,7 @@ EOT;
       }
       $WPInfoTags .= ','.$Sender->EventArguments['FormPostValues']['WPInfoThemeName'];
       $Tags = $Sender->EventArguments['FormPostValues']['Tags'];
-      if (strlen($Tags) != 0 && C('Plugins.WPInfo.KeepTags') == TRUE) {
+      if (strlen($Tags) != 0 && C('Plugins.AddWPInfo.KeepTags') == TRUE) {
          // append if other tags are set
          $Sender->EventArguments['FormPostValues']['Tags'] = $Tags.','.$WPInfoTags;
       } else {
@@ -127,22 +127,22 @@ EOT;
    /**
     *  Dispatcher for settings screen
     */
-   public function SettingsController_WPInfo_Create($Sender, $Args) {
+   public function SettingsController_AddWPInfo_Create($Sender, $Args) {
       $Sender->Permission('Garden.Settings.Manage');
       return $this->Dispatch($Sender);
-   } // End of SettingsController_WPInfo_Create
+   } // End of SettingsController_AddWPInfo_Create
    
    /**
     * Define categories to exclude
     */
    public function Controller_Index($Sender) {
-      $Sender->Title(T('WordPress Info Settings'));
-      $Sender->AddSideMenu('settings/wpinfo');
+      $Sender->Title(T('Add WordPress Info Settings'));
+      $Sender->AddSideMenu('settings/addwpinfo');
 
       $Validation = new Gdn_Validation();
-      $Validation->ApplyRule('Plugins.WPInfo.CategoryIDs', 'RequiredArray');
+      $Validation->ApplyRule('Plugins.AddWPInfo.CategoryIDs', 'RequiredArray');
       $ConfigurationModel = new Gdn_ConfigurationModel($Validation);
-      $ConfigurationModel->SetField(array('Plugins.WPInfo.CategoryIDs', 'Plugins.WPInfo.KeepTags'));
+      $ConfigurationModel->SetField(array('Plugins.AddWPInfo.CategoryIDs', 'Plugins.AddWPInfo.KeepTags'));
 
       $Form = $Sender->Form;
       $Sender->Form->SetModel($ConfigurationModel);
@@ -157,8 +157,8 @@ EOT;
 
       $CategoryModel = new Gdn_Model('Category');
       $Sender->CategoryData = $CategoryModel->GetWhere(array('AllowDiscussions' => 1, 'CategoryID <>' => -1));
-      $Sender->ExcludeCategory = C('Plugins.WPInfo.CategoryIDs');
+      $Sender->ExcludeCategory = C('Plugins.AddWPInfo.CategoryIDs');
 
-      $Sender->Render('settings', '', 'plugins/WPInfo');
+      $Sender->Render('settings', '', 'plugins/AddWPInfo');
    } // End of SettingsController_WPInfo_Create
 }
