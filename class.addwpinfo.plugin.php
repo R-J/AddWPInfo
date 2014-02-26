@@ -3,7 +3,7 @@
 $PluginInfo['AddWPInfo'] = array(
    'Name' => 'Add WordPress Info',
    'Description' => 'Force users to add additional information to discussions',
-   'Version' => '0.3',
+   'Version' => '0.4',
    'RequiredApplications' => array('Vanilla' => '>=2.1b2'),
    'RequiredPlugins' => array('Tagging' => '1.6.2'),
    'SettingsUrl' => '/settings/addwpinfo',
@@ -52,10 +52,21 @@ class AddWPInfoPlugin extends Gdn_Plugin {
 
       $WPThemes = C('Plugins.AddWPInfo.Themes', array('Thesis', 'Genesis'));
       $WPThemes = array_combine($WPThemes, $WPThemes);
-
+      
+      $Url = $Sender->Form->Action;
+      if ($Url != '/post/discussion') {
+         $CategoryUrlCode = end(explode('/', $Url));
+         $CategoryModel = new CategoryModel();
+         $Category = $CategoryModel->GetFullByUrlCode($CategoryUrlCode);
+         $CategoryID = $Category->CategoryID;
+         if (in_array($CategoryID, C('Plugins.AddWPInfo.CategoryIDs'))) {
+            $Hidden = ' Hidden';
+         }
+      }
+      
       $HtmlOut = <<< EOT
 <div class="P">
-   <ul id="AddWPInfo" class="Tabs">
+   <ul id="AddWPInfo" class="Tabs{$Hidden}">
       <li id="WPVersion">
          {$Sender->Form->Label(T('WordPress Version'), 'WPInfoWPVersion')}
          {$Sender->Form->DropDown(
